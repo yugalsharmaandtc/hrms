@@ -1,34 +1,24 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
-
-# Step 1: import Base first
+from app.core.config import get_allowed_origins
 from app.db.database import engine, Base
+from app.models.employee import Employee      # registers Employee with Base
+from app.models.attendance import Attendance  # registers Attendance with Base
 
-# Step 2: import all models so Base knows about them before create_all
-from app.models.employee import Employee
-from app.models.attendance import Attendance
-
-# Step 3: now create tables - runs automatically on every startup
+# Create tables - runs on every startup, safe to run multiple times
 Base.metadata.create_all(bind=engine)
 
-# Step 4: import routers after everything is set up
-from app.api.routes import employees, attendance
-
-app = FastAPI(
-    title="HRMS API",
-    description="Human Resource Management System API",
-    version="1.0.0"
-)
+app = FastAPI(title="HRMS API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=get_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+from app.api.routes import employees, attendance
 app.include_router(employees.router, prefix="/api/employees", tags=["Employees"])
 app.include_router(attendance.router, prefix="/api/attendance", tags=["Attendance"])
 

@@ -1,25 +1,22 @@
-from pydantic_settings import BaseSettings
-from typing import List
 import os
+from typing import List
 
-class Settings(BaseSettings):
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/hrms")
-    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "")
+DATABASE_URL: str = os.environ.get(
+    "DATABASE_URL",
+    "postgresql://postgres:postgres@localhost:5432/hrms"
+)
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+# Fix Render giving postgres:// instead of postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-    # Build CORS origins dynamically so empty string never gets added
-    @property
-    def ALLOWED_ORIGINS(self) -> List[str]:
-        origins = [
-            "http://localhost:5173",
-            "http://localhost:3000",
-        ]
-        # Add production frontend URL only if it is actually set
-        if self.FRONTEND_URL and self.FRONTEND_URL.strip():
-            origins.append(self.FRONTEND_URL.strip())
-        return origins
+FRONTEND_URL: str = os.environ.get("FRONTEND_URL", "")
 
-settings = Settings()
+def get_allowed_origins() -> List[str]:
+    origins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ]
+    if FRONTEND_URL and FRONTEND_URL.strip():
+        origins.append(FRONTEND_URL.strip())
+    return origins

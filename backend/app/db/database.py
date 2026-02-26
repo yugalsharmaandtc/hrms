@@ -1,16 +1,12 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from app.core.config import settings
+from app.core.config import DATABASE_URL
 
-# Render gives postgres:// but SQLAlchemy 2.0 needs postgresql://
-database_url = settings.DATABASE_URL
-if database_url.startswith("postgres://"):
-    database_url = database_url.replace("postgres://", "postgresql://", 1)
+print(f"DB URL prefix: {DATABASE_URL[:30]}...", flush=True)
 
-engine = create_engine(database_url)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# SQLAlchemy 2.0 style - replaces the old declarative_base()
 class Base(DeclarativeBase):
     pass
 

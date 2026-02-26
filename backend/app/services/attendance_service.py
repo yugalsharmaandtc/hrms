@@ -7,15 +7,12 @@ from datetime import date
 
 def get_all_attendance(db: Session, employee_id: int = None, filter_date: date = None):
     query = db.query(Attendance)
-
     if employee_id:
         query = query.filter(Attendance.employee_id == employee_id)
     if filter_date:
         query = query.filter(Attendance.date == filter_date)
 
     records = query.order_by(Attendance.date.desc()).all()
-
-    # Attach employee name and ID to each record for frontend display
     result = []
     for record in records:
         emp = db.query(Employee).filter(Employee.id == record.employee_id).first()
@@ -32,17 +29,14 @@ def get_all_attendance(db: Session, employee_id: int = None, filter_date: date =
     return result
 
 def mark_attendance(db: Session, data: AttendanceCreate):
-    # Make sure the employee exists
     employee = db.query(Employee).filter(Employee.id == data.employee_id).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
 
-    # Only one attendance record per employee per day allowed
     existing = db.query(Attendance).filter(
         Attendance.employee_id == data.employee_id,
         Attendance.date == data.date
     ).first()
-
     if existing:
         raise HTTPException(
             status_code=400,
@@ -73,7 +67,6 @@ def update_attendance(db: Session, attendance_id: int, data: AttendanceUpdate):
     update_data = data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(record, key, value)
-
     db.commit()
     db.refresh(record)
 
@@ -99,15 +92,11 @@ def delete_attendance(db: Session, attendance_id: int):
 
 def get_employee_attendance_summary(db: Session, employee_id: int):
     from sqlalchemy import func
-
     employee = db.query(Employee).filter(Employee.id == employee_id).first()
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
 
-    records = db.query(
-        Attendance.status,
-        func.count(Attendance.id)
-    ).filter(
+    records = db.query(Attendance.status, func.count(Attendance.id)).filter(
         Attendance.employee_id == employee_id
     ).group_by(Attendance.status).all()
 

@@ -14,11 +14,9 @@ def get_employee_by_id(db: Session, employee_id: int):
     return employee
 
 def create_employee(db: Session, data: EmployeeCreate):
-    # Check for duplicate employee_id or email before inserting
     existing = db.query(Employee).filter(
         (Employee.employee_id == data.employee_id) | (Employee.email == data.email)
     ).first()
-
     if existing:
         if existing.employee_id == data.employee_id:
             raise HTTPException(status_code=400, detail="Employee ID already exists")
@@ -38,7 +36,6 @@ def update_employee(db: Session, employee_id: int, data: EmployeeUpdate):
     employee = get_employee_by_id(db, employee_id)
     update_data = data.model_dump(exclude_unset=True)
 
-    # If email is changing, make sure no one else has that email
     if "email" in update_data and update_data["email"] != employee.email:
         existing = db.query(Employee).filter(Employee.email == update_data["email"]).first()
         if existing:
@@ -46,7 +43,6 @@ def update_employee(db: Session, employee_id: int, data: EmployeeUpdate):
 
     for key, value in update_data.items():
         setattr(employee, key, value)
-
     db.commit()
     db.refresh(employee)
     return employee
@@ -63,21 +59,9 @@ def get_employee_stats(db: Session):
     from datetime import date
 
     total = db.query(Employee).count()
-
-    departments = db.query(
-        Employee.department,
-        func.count(Employee.id)
-    ).group_by(Employee.department).all()
-
-    today_present = db.query(Attendance).filter(
-        Attendance.date == date.today(),
-        Attendance.status == "Present"
-    ).count()
-
-    today_absent = db.query(Attendance).filter(
-        Attendance.date == date.today(),
-        Attendance.status == "Absent"
-    ).count()
+    departments = db.query(Employee.department, func.count(Employee.id)).group_by(Employee.department).all()
+    today_present = db.query(Attendance).filter(Attendance.date == date.today(), Attendance.status == "Present").count()
+    today_absent  = db.query(Attendance).filter(Attendance.date == date.today(), Attendance.status == "Absent").count()
 
     return {
         "total_employees": total,
@@ -85,4 +69,3 @@ def get_employee_stats(db: Session):
         "today_absent": today_absent,
         "departments": [{"name": d[0], "count": d[1]} for d in departments],
     }
-    
