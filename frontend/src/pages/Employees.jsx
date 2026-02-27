@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, Plus, Trash2, Pencil, Search, Mail, Phone } from 'lucide-react'
+import { Users, Plus, Trash2, Pencil, Search, Mail, Phone, Briefcase } from 'lucide-react'
 import { employeeAPI } from '../services/api'
 import toast from 'react-hot-toast'
 import { useGreeting } from '../hooks/useGreeting'
